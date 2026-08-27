@@ -1,0 +1,31 @@
+services:
+  tp-backend:
+    build: ./backend
+    container_name: tp-backend
+    ports:
+      - "127.0.0.1:8003:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      tp-db:
+        condition: service_healthy
+    restart: always
+
+  tp-db:
+    image: postgres:16-alpine
+    container_name: tp-db
+    environment:
+      POSTGRES_DB: technoprint
+      POSTGRES_USER: technoprint
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env рядом с docker-compose.yml}
+    volumes:
+      - tp_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U technoprint"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  tp_pgdata:

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="40" fill="#2563eb"/>
+  <g transform="translate(48,40)" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M81 81h12a12 12 0 0012-12V45a12 12 0 00-12-12H3a12 12 0 00-12 12v24a12 12 0 0012 12h12"/>
+    <path d="M15 105h66a12 12 0 0012-12V69a12 12 0 00-12-12H15a12 12 0 00-12 12v24a12 12 0 0012 12z"/>
+    <path d="M69 33V21a12 12 0 00-12-12H39a12 12 0 00-12 12v12"/>
+  </g>
+  <text x="96" y="158" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="22" font-weight="bold">TechnoPrint</text>
+</svg>

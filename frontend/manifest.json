@@ -1,0 +1,13 @@
+{
+    "name": "Техно-Принт — Система учёта",
+    "short_name": "Техно-Принт",
+    "description": "Система учёта сервисного центра Техно-Принт",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#2563eb",
+    "orientation": "any",
+    "icons": [
+        { "src": "/icons/icon-192.svg", "sizes": "any", "type": "image/svg+xml" }
+    ]
+}

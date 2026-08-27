@@ -1,0 +1,33 @@
+# ── секреты ──────────────────────────────────────────────
+.env
+*.env
+!*.env.example
+deploy.env
+backend/.env
+
+# ── боевые данные: клиенты, суммы, дампы ────────────────
+db-backups/
+*.sql.gz
+*.xlsx
+*.dt
+*.rar
+import_orders_2026.sql
+
+# ── одноразовые скрипты переноса (содержат имена клиентов) ─
+backend/client_resolver.py
+backend/import_data.py
+backend/import_from_bot.py
+backend/import_orders_xlsx.py
+backend/import_payments.py
+backend/parse_bot_history.py
+backend/preview_clients.py
+backend/ubc_migrate.py
+backend/verify_import.py
+
+# ── служебное ───────────────────────────────────────────
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
+C\\Users\\user\\.claude/
+*.log
