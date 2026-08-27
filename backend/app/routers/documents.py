@@ -54,9 +54,22 @@ async def _create_cash_order(db: AsyncSession, *, client_id: int, service_name: 
 MONTHS_RU = ["январь", "февраль", "март", "апрель", "май", "июнь",
              "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"]
 
-# С какого месяца ЗП в CRM ведётся полностью. Раньше (январь–апрель 2026 и вся доCRM-история)
-# в остатках висят фантомные «долги» из-за незаполненных выплат — туда переводы закидывать нельзя.
-SALARY_TRACKED_FROM = (2026, 5)
+async def _salary_tracked_from(db: AsyncSession) -> tuple[int, int] | None:
+    """С какого месяца зарплата в CRM ведётся полностью (настройка salary_tracked_from, «ГГГГ-ММ»).
+
+    До этого месяца в остатках могут висеть фантомные долги из-за незаполненной истории выплат —
+    туда переводы закидывать нельзя. Не задана — ограничения нет.
+    """
+    from app.models import AppSetting
+    row = (await db.execute(select(AppSetting).where(AppSetting.key == "salary_tracked_from"))).scalars().first()
+    raw = (row.value or "").strip() if row else ""
+    if not raw:
+        return None
+    try:
+        year, month = raw.split("-")[:2]
+        return int(year), int(month)
+    except (ValueError, IndexError):
+        return None
 
 
 async def _add_transfer_salary(db: AsyncSession, on_date, total: Decimal, label: str) -> list[tuple]:
@@ -74,8 +87,9 @@ async def _add_transfer_salary(db: AsyncSession, on_date, total: Decimal, label:
     left = Decimal(str(total))
     parts: list[tuple] = []
 
+    tracked_from = await _salary_tracked_from(db)
     debt = (await month_balance(db, prev_year, prev_month)
-            if (prev_year, prev_month) >= SALARY_TRACKED_FROM else Decimal(0))
+            if (tracked_from is None or (prev_year, prev_month) >= tracked_from) else Decimal(0))
     if debt > 0 and left > 0:
         to_prev = min(left, debt).quantize(Decimal("0.01"))
         if to_prev > 0:

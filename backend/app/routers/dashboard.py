@@ -7,11 +7,24 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Order, Expense, MonthlyCost, CashWithdrawal, SalaryPayment, CartridgeRefill, WorkJob, GoodSale
+from app.models import (Order, Expense, MonthlyCost, CashWithdrawal, SalaryPayment, CartridgeRefill,
+                        WorkJob, GoodSale, AppSetting)
 from app.schemas import DailySummary, MonthlySummary, YearlySummary, OrderResponse
 from app.auth import get_current_user, require_admin, User
 from app.audit_log import log as audit
 from app.config import BANK_COMMISSION, CARD_COMMISSION
+
+
+async def _history_cutoff(db: AsyncSession):
+    """Дата, раньше которой перенесённый архив не попадает в отчёты (если не привязан к заказу).
+    Настройка history_cutoff в формате ГГГГ-ММ-ДД; не задана — отсечки нет."""
+    row = (await db.execute(select(AppSetting).where(AppSetting.key == "history_cutoff"))).scalars().first()
+    if not row or not (row.value or "").strip():
+        return None
+    try:
+        return date.fromisoformat(row.value.strip())
+    except ValueError:
+        return None
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -195,13 +208,18 @@ async def sections_summary(year: int, month: int | None = None,
         return c
 
     # Учёт по ДАТЕ РАБОТЫ: что сделано в этом месяце — то и в этом месяце (как зарплата мастера),
-    # даже если счёт выписан позже. Молча закрытую историю (≤ 31.05.2026 без order/doc) НЕ показываем.
-    from datetime import date as _d
-    CUTOFF = _d(2026, 6, 1)
+    # даже если счёт выписан позже.
+    # Отсечка истории: записи РАНЬШЕ неё показываем, только если они привязаны к заказу/документу.
+    # Нужна тем, кто перенёс архив из старой системы и не хочет видеть его в отчётах.
+    # Задаётся настройкой history_cutoff (ГГГГ-ММ-ДД); не задана — показываем всё.
+    CUTOFF = await _history_cutoff(db)
     eff = func.coalesce(CartridgeRefill.last_date, CartridgeRefill.work_date, CartridgeRefill.first_date)
-    in_crm_r = (CartridgeRefill.order_id.isnot(None)) | (CartridgeRefill.document_id.isnot(None)) | (eff >= CUTOFF)
-    in_crm_w = (WorkJob.order_id.isnot(None)) | (WorkJob.document_id.isnot(None)) | (WorkJob.date >= CUTOFF)
-    in_crm_g = (GoodSale.order_id.isnot(None)) | (GoodSale.document_id.isnot(None)) | (GoodSale.date >= CUTOFF)
+    linked_r = (CartridgeRefill.order_id.isnot(None)) | (CartridgeRefill.document_id.isnot(None))
+    linked_w = (WorkJob.order_id.isnot(None)) | (WorkJob.document_id.isnot(None))
+    linked_g = (GoodSale.order_id.isnot(None)) | (GoodSale.document_id.isnot(None))
+    in_crm_r = (linked_r | (eff >= CUTOFF)) if CUTOFF else True
+    in_crm_w = (linked_w | (WorkJob.date >= CUTOFF)) if CUTOFF else True
+    in_crm_g = (linked_g | (GoodSale.date >= CUTOFF)) if CUTOFF else True
     r = (await db.execute(select(func.coalesce(func.sum(CartridgeRefill.price), 0), func.count(CartridgeRefill.id))
          .where(in_crm_r, CartridgeRefill.price.isnot(None), *conds(eff)))).one()
     w = (await db.execute(select(func.coalesce(func.sum(WorkJob.price), 0), func.count(WorkJob.id))

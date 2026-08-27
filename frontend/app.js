@@ -140,6 +140,12 @@ function app() {
         salaryMonth: new Date().getMonth() + 1,
         salaryYear: new Date().getFullYear(),
         salarySettings: null, showSalarySettings: false,
+        salaryEmployee: '',              // чья зарплата — задаётся в настройках, не зашито
+        appTitle: '',                    // название системы — из настроек
+        users: [], showUserForm: false,  // управление пользователями (админ)
+        userForm: { username: '', full_name: '', role: 'worker', password: '' },
+        showPwdForm: false,
+        pwdForm: { old_password: '', new_password: '', repeat: '' },
         showSalaryPayForm: false,
         salaryPayForm: { date: new Date().toISOString().split('T')[0], amount: 0, payment_type: 'cash', notes: '' },
         showWorkForm: false,
@@ -232,6 +238,58 @@ function app() {
         ws: null,
 
         // ═══════════════ INIT ═══════════════
+        async loadAppTitle() {
+            try { const r = await api('/api/app-info'); this.appTitle = (r && r.title) || 'CRM'; document.title = this.appTitle + ' — Система учёта'; }
+            catch (e) { this.appTitle = 'CRM'; }
+        },
+
+        // ───────── пользователи: владелец сам заводит логины и пароли ─────────
+        async loadUsers() {
+            try { this.users = await api('/api/users') || []; } catch (e) { this.toast(e.message, 'error'); }
+        },
+        async createUser() {
+            try {
+                await api('/api/users', { method: 'POST', body: JSON.stringify(this.userForm) });
+                this.toast('Пользователь создан', 'success');
+                this.userForm = { username: '', full_name: '', role: 'worker', password: '' };
+                this.showUserForm = false;
+                await this.loadUsers();
+            } catch (e) { this.toast(e.message, 'error'); }
+        },
+        async resetUserPassword(u) {
+            const p = prompt(`Новый пароль для «${u.username}» (минимум 8 символов):`);
+            if (!p) return;
+            try {
+                await api('/api/users/' + u.id, { method: 'PATCH', body: JSON.stringify({ password: p }) });
+                this.toast('Пароль изменён', 'success');
+            } catch (e) { this.toast(e.message, 'error'); }
+        },
+        async deleteUser(u) {
+            if (!confirm(`Удалить пользователя «${u.username}»?`)) return;
+            try {
+                await api('/api/users/' + u.id, { method: 'DELETE' });
+                this.toast('Пользователь удалён', 'success');
+                await this.loadUsers();
+            } catch (e) { this.toast(e.message, 'error'); }
+        },
+        async changeOwnPassword() {
+            if (this.pwdForm.new_password !== this.pwdForm.repeat) { this.toast('Пароли не совпадают', 'error'); return; }
+            try {
+                await api('/api/users/me/password', { method: 'PUT', body: JSON.stringify({
+                    old_password: this.pwdForm.old_password, new_password: this.pwdForm.new_password }) });
+                this.toast('Пароль изменён', 'success');
+                this.showPwdForm = false;
+                this.pwdForm = { old_password: '', new_password: '', repeat: '' };
+            } catch (e) { this.toast(e.message, 'error'); }
+        },
+        async saveAppTitle() {
+            try {
+                const r = await api('/api/app-info', { method: 'PUT', body: JSON.stringify({ title: this.appTitle }) });
+                this.appTitle = r.title; document.title = r.title + ' — Система учёта';
+                this.toast('Название сохранено', 'success');
+            } catch (e) { this.toast(e.message, 'error'); }
+        },
+
         async init() {
             // Check auth
             const token = localStorage.getItem(TOKEN_KEY);
@@ -239,6 +297,9 @@ function app() {
 
             // Dark mode
             if (this.darkMode) document.documentElement.classList.add('dark');
+
+            // название системы — из настроек, а не зашито в вёрстку
+            this.loadAppTitle();
 
             // Оффлайн-движок: запустить, подписаться на статус очереди
             if (window.TP) {
@@ -338,7 +399,7 @@ function app() {
                 case 'orders': await this.loadOrders(); break;
                 case 'cartridges': await this.loadCartRefs(); this.loadRecentCarts(); this.focusScan(); break;
                 case 'works': await this.loadWorkRefs(); this.startWorkNew(); break;
-                case 'org': await this.loadOrg(); break;
+                case 'org': await this.loadOrg(); if (this.user?.role === 'admin') await this.loadUsers(); break;
                 case 'goods': this.startSaleNew(); break;
                 case 'pricelist': await this.loadPricelist(); break;
                 case 'audit': await this.loadAudit(); break;
@@ -774,6 +835,7 @@ function app() {
         async loadSalary() {
             try {
                 this.salary = await api(`/api/salary?year=${this.salaryYear}&month=${this.salaryMonth}`);
+                if (!this.salaryEmployee) { try { const r = await api('/api/salary/employee-name'); this.salaryEmployee = r.employee_name || ''; } catch (e) {} }
                 if (this.user?.role === 'admin' && !this.salarySettings) { try { this.salarySettings = await api('/api/salary/settings'); } catch (e) {} }
             } catch (e) {
                 this.toast('Ошибка загрузки зарплаты', 'error');
@@ -783,12 +845,14 @@ function app() {
             try {
                 const s = this.salarySettings || {};
                 const body = {
+                    employee_name: (s.employee_name || '').trim(),
                     commission_rate: (Number(s.commission_pct) || 0) / 100,
                     fixed_salary: Number(s.fixed_salary) || 0,
                     fixed_rent: Number(s.fixed_rent) || 0,
                     payroll_tax: Number(s.payroll_tax) || 0,
                 };
                 this.salarySettings = await api('/api/salary/settings', { method: 'PUT', body: JSON.stringify(body) });
+                this.salaryEmployee = this.salarySettings.employee_name || '';
                 this.showSalarySettings = false;
                 this.toast('Правила зарплаты сохранены', 'success');
                 await this.loadSalary();
@@ -2219,7 +2283,8 @@ function app() {
                 const blob = await res.blob();
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = type === 'yearly' ? `Техно-Принт_${this.year}.xlsx` : `Техно-Принт_${this.year}-${month}.xlsx`;
+                const base = (this.appTitle || 'CRM').replace(/[^\p{L}\p{N}_-]+/gu, '_');
+                a.download = type === 'yearly' ? `${base}_${this.year}.xlsx` : `${base}_${this.year}-${month}.xlsx`;
                 a.click();
                 URL.revokeObjectURL(a.href);
                 this.toast('Файл скачан', 'success');

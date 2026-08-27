@@ -1,8 +1,8 @@
-const CACHE = 'tp-v56';
+const CACHE = 'tp-v57';
 const API_CACHE = 'tp-api';   // данные API — переживают обновления приложения
 // ВАЖНО: пути со штампом ?v= должны совпадать со <script src> в index.html — иначе страница
 // просит один URL, а в кэше лежит другой, и обновление до пользователя не доезжает.
-const ASSET_V = '20260807a';
+const ASSET_V = '20260827a';
 const PRECACHE = ['/', '/index.html', '/login.html', `/app.js?v=${ASSET_V}`, `/offline.js?v=${ASSET_V}`, '/manifest.json',
                   '/vendor/tailwind.js', '/vendor/alpine.min.js', '/vendor/chart.min.js', '/vendor/jsbarcode.min.js'];
 

@@ -1,7 +1,7 @@
 {
-    "name": "Техно-Принт — Система учёта",
-    "short_name": "Техно-Принт",
-    "description": "Система учёта сервисного центра Техно-Принт",
+    "name": "CRM — Система учёта",
+    "short_name": "CRM",
+    "description": "Система учёта сервисной мастерской",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0f172a",

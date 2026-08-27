@@ -22,13 +22,18 @@ router = APIRouter(prefix="/api/salary", tags=["salary"])
 MONTHS_RU = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
              "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
 
-# Значения по умолчанию (= прежнее поведение); админ может переопределить через app_settings.
+# Нейтральные значения по умолчанию: ставки конкретной мастерской не зашиты в код,
+# а задаются владельцем в интерфейсе (шестерёнка в разделе «Зарплата») и живут в app_settings.
 SALARY_DEFAULTS = {
-    "commission_rate": Decimal("0.15"),
-    "fixed_salary": Decimal("20000"),
-    "fixed_rent": Decimal("14700"),
-    "payroll_tax": Decimal("5825"),   # НДФЛ 13% + страховые с пол ставки МРОТ
+    "commission_rate": Decimal("0.15"),   # доля с выручки мастера
+    "fixed_salary": Decimal("0"),         # оклад
+    "fixed_rent": Decimal("0"),           # аренда — попадает в постоянные расходы месяца
+    "payroll_tax": Decimal("0"),          # налоги с ЗП
 }
+
+# Имя сотрудника в заголовке раздела — тоже настройка, а не константа.
+EMPLOYEE_NAME_KEY = "salary_employee_name"
+EMPLOYEE_NAME_DEFAULT = "сотрудника"
 
 
 async def _salary_settings(db: AsyncSession) -> dict:
@@ -174,12 +179,20 @@ class SalarySettingsIn(BaseModel):
     fixed_salary: float | None = None
     fixed_rent: float | None = None
     payroll_tax: float | None = None
+    employee_name: str | None = None       # чьё имя показывать в заголовке раздела
+
+
+async def _employee_name(db: AsyncSession) -> str:
+    row = (await db.execute(select(AppSetting).where(AppSetting.key == EMPLOYEE_NAME_KEY))).scalars().first()
+    return (row.value if row and row.value else EMPLOYEE_NAME_DEFAULT)
 
 
 @router.get("/settings")
 async def get_salary_settings(db: AsyncSession = Depends(get_db), _admin: User = Depends(require_admin)):
     st = await _salary_settings(db)
-    return {k: float(v) for k, v in st.items()}
+    out = {k: float(v) for k, v in st.items()}
+    out["employee_name"] = await _employee_name(db)
+    return out
 
 
 @router.put("/settings")
@@ -191,9 +204,24 @@ async def put_salary_settings(body: SalarySettingsIn, db: AsyncSession = Depends
             if val < 0 or (name == "commission_rate" and val > 1):
                 raise HTTPException(400, "Недопустимое значение (процент задаётся долей: 0.15 = 15%)")
             await _set_salary_setting(db, name, val)
+    if body.employee_name is not None:
+        row = (await db.execute(select(AppSetting).where(AppSetting.key == EMPLOYEE_NAME_KEY))).scalars().first()
+        value = body.employee_name.strip()[:100]
+        if row:
+            row.value = value
+        else:
+            db.add(AppSetting(key=EMPLOYEE_NAME_KEY, value=value))
     await db.commit()
     st = await _salary_settings(db)
-    return {k: float(v) for k, v in st.items()}
+    out = {k: float(v) for k, v in st.items()}
+    out["employee_name"] = await _employee_name(db)
+    return out
+
+
+# Имя сотрудника нужно и работнику (заголовок раздела), а /settings — только админу.
+@router.get("/employee-name")
+async def get_employee_name(db: AsyncSession = Depends(get_db), _user: User = Depends(get_current_user)):
+    return {"employee_name": await _employee_name(db)}
 
 
 @router.put("/amounts")

@@ -12,6 +12,23 @@ paperwork rules, and the owner needs to know how much cash is in the drawer righ
 
 ---
 
+## Screenshots
+
+All data below is generated demo data — no real customers or amounts.
+
+| Dashboard | Cartridge journal |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Cartridge journal](docs/screenshots/cartridges.png) |
+
+| Invoice | Salary |
+|---|---|
+| ![Invoice](docs/screenshots/document.png) | ![Salary](docs/screenshots/salary.png) |
+
+| Receivables | On a phone |
+|---|---|
+| ![Receivables](docs/screenshots/debts.png) | <img src="docs/screenshots/mobile.png" width="260"> |
+
+
 ## Context
 
 The shop is in Uporovo, a rural district of ~20 000 people in the Tyumen region. It refills printer
@@ -96,6 +113,12 @@ No build step: the browser loads the same files that live in the repo.
 cp .env.example .env                 # POSTGRES_PASSWORD for compose
 cp backend/.env.example backend/.env # SECRET_KEY is required: openssl rand -hex 32
 docker compose up -d --build
+
+# create the first administrator — there are no default accounts
+docker compose exec tp-backend python create_admin.py owner "your-password" "Your Name"
+
+# optional: fill the database with generated demo data to look around
+docker compose exec tp-backend python seed_demo.py
 ```
 
 The API is then on `127.0.0.1:8003` (`/docs` for the OpenAPI UI, `/health` for a liveness check),
@@ -104,6 +127,14 @@ and the frontend is static files to be served by nginx — see `nginx.conf`.
 Deployment to a server is `./deploy.sh`, which reads its target from `deploy.env`
 (copy `deploy.env.example`). It syncs code, writes environment files, rebuilds containers,
 configures nginx and issues the TLS certificate.
+
+## Nothing is hard-wired to one shop
+
+The system ships with **no default accounts** — the first administrator is created explicitly,
+everyone else is added from the UI, and passwords are set by the owner. Company details, the
+application title, the payroll rules (commission rate, base salary, rent, payroll tax), the name of
+the employee whose salary the module tracks, and the history cut-off date for imported archives are
+all settings stored in the database, not constants in the code.
 
 ## Repository layout
 

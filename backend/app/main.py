@@ -9,7 +9,7 @@ from starlette.responses import Response
 from app.config import SECRET_KEY, ALGORITHM
 from app.database import init_db
 from app.ws import manager
-from app.routers import auth, orders, clients, services, expenses, monthly_costs, advances, debts, dashboard, search, salary, internal, cartridges, documents, works, org, goods, audit
+from app.routers import users, auth, orders, clients, services, expenses, monthly_costs, advances, debts, dashboard, search, salary, internal, cartridges, documents, works, org, goods, audit
 
 
 @asynccontextmanager
@@ -96,6 +96,8 @@ app.include_router(works.router)
 app.include_router(org.router)
 app.include_router(goods.router)
 app.include_router(audit.router)
+app.include_router(users.router)
+app.include_router(org.app_info)
 
 
 @app.websocket("/api/ws")

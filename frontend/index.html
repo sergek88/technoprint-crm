@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Техно-Принт — Система учёта</title>
+    <title x-text="(appTitle || 'CRM') + ' — Система учёта'">CRM — Система учёта</title>
     <script src="/vendor/tailwind.js"></script>
     <script src="/vendor/alpine.min.js" defer></script>
     <script src="/vendor/chart.min.js"></script>
@@ -102,7 +102,7 @@
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
             </div>
             <div>
-                <h1 class="font-bold text-lg">Техно-Принт</h1>
+                <h1 class="font-bold text-lg" x-text="appTitle || 'CRM'">CRM</h1>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Система учёта</p>
             </div>
         </div>
@@ -143,7 +143,7 @@
             <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
             </div>
-            <h1 class="font-bold text-lg">Техно-Принт</h1>
+            <h1 class="font-bold text-lg" x-text="appTitle || 'CRM'">CRM</h1>
         </div>
         <button @click="sidebarOpen=false" class="text-gray-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
     </div>
@@ -752,7 +752,7 @@
         <div x-show="page==='salary'" x-cloak class="fade-in">
             <!-- Header with month nav -->
             <div class="flex items-center justify-between mb-4 sm:mb-6 gap-2">
-                <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 truncate">Зарплата Николая</h2>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 truncate" x-text="'Зарплата ' + (salaryEmployee || 'сотрудника')">Зарплата</h2>
                 <div class="flex items-center gap-2">
                     <button x-show="user?.role==='admin'" @click="openSalarySettings()" title="Правила зарплаты" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -776,6 +776,9 @@
                     </div>
                     <p class="text-xs text-gray-500 mb-3">Применяется ко всем месяцам при пересчёте. Заправки начисляются по проценту автоматически; работы — вручную.</p>
                     <div class="space-y-3 text-sm" x-show="salarySettings">
+                        <div class="flex items-center justify-between gap-3"><label>Чья зарплата (имя в заголовке)</label>
+                            <input type="text" x-model="salarySettings.employee_name" placeholder="напр. Николая"
+                                   class="w-40 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-right"></div>
                         <div class="flex items-center justify-between gap-3"><label>Процент с заправок/работ, %</label>
                             <input type="number" step="0.1" min="0" max="100" x-model.number="salarySettings.commission_pct" class="w-28 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-right"></div>
                         <div class="flex items-center justify-between gap-3"><label>Оклад (фикс.), ₽</label>
@@ -2344,6 +2347,79 @@
             </div>
         </div>
 
+            <!-- Название системы -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-700 mt-5">
+                <h2 class="font-bold text-lg mb-1">Название системы</h2>
+                <p class="text-xs text-gray-500 mb-4">Показывается в шапке, на экране входа и в именах выгрузок.</p>
+                <div class="flex gap-2">
+                    <input x-model="appTitle" maxlength="60" placeholder="напр. Техно-Принт"
+                           class="flex-1 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700">
+                    <button @click="saveAppTitle()" class="px-4 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-medium">Сохранить</button>
+                </div>
+            </div>
+
+            <!-- Пользователи -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-700 mt-5">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="font-bold text-lg">Пользователи</h2>
+                    <button @click="showUserForm = !showUserForm" class="px-3 py-1.5 text-sm font-medium bg-brand-600 text-white rounded-lg">+ Пользователь</button>
+                </div>
+                <p class="text-xs text-gray-500 mb-4">Логины и пароли задаёте вы сами. Учётных записей по умолчанию в системе нет.</p>
+
+                <div x-show="showUserForm" x-transition x-cloak class="mb-4 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
+                    <form @submit.prevent="createUser()" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input x-model="userForm.username" required placeholder="Логин" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                        <input x-model="userForm.full_name" required placeholder="Имя и фамилия" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                        <select x-model="userForm.role" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                            <option value="worker">Работник</option>
+                            <option value="admin">Владелец (полный доступ)</option>
+                        </select>
+                        <div class="flex gap-2">
+                            <input x-model="userForm.password" type="password" required minlength="8" placeholder="Пароль, от 8 символов"
+                                   class="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium">OK</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="space-y-2">
+                    <template x-for="u in users" :key="u.id">
+                        <div class="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                            <div class="flex items-center gap-3">
+                                <span class="font-medium text-sm" x-text="u.full_name"></span>
+                                <span class="text-xs text-gray-400" x-text="u.username"></span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium"
+                                      :class="u.role === 'admin' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-300'"
+                                      x-text="u.role === 'admin' ? 'владелец' : 'работник'"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button @click="resetUserPassword(u)" class="text-xs px-2 py-1 rounded-lg bg-gray-100 dark:bg-slate-700">Сменить пароль</button>
+                                <button @click="deleteUser(u)" class="text-red-400 hover:text-red-600 p-1" title="Удалить">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    <p x-show="!users.length" class="text-sm text-gray-400 text-center py-3">Список пуст</p>
+                </div>
+            </div>
+
+            <!-- Свой пароль -->
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-700 mt-5">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-bold text-lg">Мой пароль</h2>
+                    <button @click="showPwdForm = !showPwdForm" class="px-3 py-1.5 text-sm font-medium bg-gray-100 dark:bg-slate-700 rounded-lg">Сменить</button>
+                </div>
+                <form x-show="showPwdForm" x-cloak x-transition @submit.prevent="changeOwnPassword()" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                    <input x-model="pwdForm.old_password" type="password" required placeholder="Текущий пароль" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                    <input x-model="pwdForm.new_password" type="password" required minlength="8" placeholder="Новый, от 8 символов" class="px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                    <div class="flex gap-2">
+                        <input x-model="pwdForm.repeat" type="password" required placeholder="Ещё раз" class="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm">
+                        <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium">OK</button>
+                    </div>
+                </form>
+            </div>
+
         <!-- ════ ЖУРНАЛ ДЕЙСТВИЙ ════ -->
         <div x-show="page==='audit'" x-cloak class="fade-in">
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
@@ -2396,7 +2472,7 @@
                 <div><label class="block text-xs text-gray-500 mb-1">Начать с №</label>
                     <input type="number" min="1" x-model.number="labelForm.start" @change="reloadLabels()" class="w-28 px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm"></div>
                 <div class="flex-1 min-w-[140px]"><label class="block text-xs text-gray-500 mb-1">Подпись на наклейке (для всех)</label>
-                    <input x-model="labelForm.text" @input="applyLabelText()" placeholder="напр. Техно-Принт" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm"></div>
+                    <input x-model="labelForm.text" @input="applyLabelText()" placeholder="напр. название мастерской" class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-sm"></div>
                 <button @click="labelForm.count = labelFit.perPage; reloadLabels()" title="Заполнить лист целиком" class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 text-sm font-medium">Лист</button>
                 <button @click="printLabels()" class="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium">Печать</button>
             </div>
@@ -2645,8 +2721,8 @@
 </div>
 
 <script src="vendor/jsbarcode.min.js?v=1"></script>
-<script src="offline.js?v=20260807a"></script>
-<script src="app.js?v=20260807a"></script>
+<script src="offline.js?v=20260827a"></script>
+<script src="app.js?v=20260827a"></script>
 <script>
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});

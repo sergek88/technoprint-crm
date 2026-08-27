@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.auth import get_current_user, require_admin, User
 from app.audit_log import log as audit
-from app.models import Organization
+from app.models import Organization, AppSetting
 
 router = APIRouter(prefix="/api/org", tags=["org"])
 
@@ -66,3 +67,31 @@ async def put_org(body: OrgIn, db: AsyncSession = Depends(get_db), user: User = 
     audit(db, user, "edit_org", "Изменены реквизиты организации")
     await db.commit()
     return _dict(o)
+
+
+# ───────── название системы: показывается в шапке и на экране входа ─────────
+# Без авторизации: экран входа рисуется до логина. Ничего чувствительного не отдаём.
+app_info = APIRouter(tags=["app"])
+
+
+class AppTitleIn(BaseModel):
+    title: str
+
+
+@app_info.get("/api/app-info")
+async def get_app_info(db: AsyncSession = Depends(get_db)):
+    row = (await db.execute(select(AppSetting).where(AppSetting.key == "app_title"))).scalars().first()
+    return {"title": (row.value if row and row.value else "CRM учёта")}
+
+
+@app_info.put("/api/app-info")
+async def set_app_info(body: AppTitleIn, db: AsyncSession = Depends(get_db),
+                       _admin: User = Depends(require_admin)):
+    title = body.title.strip()[:60] or "CRM учёта"
+    row = (await db.execute(select(AppSetting).where(AppSetting.key == "app_title"))).scalars().first()
+    if row:
+        row.value = title
+    else:
+        db.add(AppSetting(key="app_title", value=title))
+    await db.commit()
+    return {"title": title}

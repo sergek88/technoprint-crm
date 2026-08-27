@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Техно-Принт — Вход</title>
+    <title>Вход в систему</title>
     <script src="/vendor/tailwind.js"></script>
     <script src="/vendor/alpine.min.js" defer></script>
     <link rel="manifest" href="/manifest.json">
@@ -34,7 +34,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Техно-Принт</h1>
+                <h1 id="appTitle" class="text-2xl font-bold text-gray-900 dark:text-white">Вход</h1>
                 <p class="text-gray-500 dark:text-gray-400 mt-1">Система учёта</p>
             </div>
 
@@ -125,6 +125,12 @@ function loginApp() {
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+</script>
+<script>
+// название системы задаётся владельцем в настройках, а не зашито в код
+fetch('/api/app-info').then(r => r.json()).then(d => {
+    if (d && d.title) { document.getElementById('appTitle').textContent = d.title; document.title = d.title + ' — Вход'; }
+}).catch(() => {});
 </script>
 </body>
 </html>
